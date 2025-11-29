@@ -1,0 +1,42 @@
+Phase Two – Progress Report
+Problem Definition & Motivation
+
+Counterfeit products and buyer scams pose a significant and growing challenge in online marketplaces. 
+Fraudulent listing can cause financial and safety risks to buyers and can damage platform credibility. 
+With increasing transaction volumes and millions of sellers, manually detecting counterfeit goods becomes 
+unrealistic; this would be very inefficient and prone to human error. Our project aims to address this issue 
+by developing a machine-learning based system capable of automatically identifying counterfeit products and 
+transactions using behavioral, transactional, and seller-related features. This work is motivated by the 
+importance of platform trust and the need for scalable and data driven solutions to fraud detection in 
+real-world ecommerce environments.
+
+Objective & Goals
+
+Our primary objective is to build a supervised classification model that predicts whether 
+a product or transaction involves counterfeit activity. 
+
+•	Conduct exploratory data analysis on both datasets to understand trends, anomalies, correlations and potential fraud indicators.
+•	Preprocess the dataset through encoding, normalization, and construction of temporal features (“time” like transaction date), creating derived features and exploring whether merging the two datasets improves performance.
+•	Compare multiple machine learning models to identify the strongest performer based on our objective evaluation metrics.
+•	Evaluate the model performance using accuracy, precision, recall, F1 score, and ROC-AUC, allowing for measurable objectives between models for detecting counterfeit cases.
+•	Produce a final system that highlights the most important predictive signals (seller rating, price anomalies, geolocation mismatch ex. Same seller in multiple areas).
+
+Proposed Methods & Feasibility
+
+We have chosen and explored two complementary datasets. Our datasets include “buyer data” (transactional). 
+Our target variable involves_counterfeit . “Seller data” (product and behavior), our target variable 
+is_counterfeit. Our initial data analysis confirmed that both sets are high quality, well structured, 
+and capture distinct dimensions of counterfeit behavior. We have begun identifying potentially 
+predictive features such as seller_rating, shipping_time_days, domain_age_days, and geolocation mismatch.
+We plan to preprocess each dataset using categorical one-hot encoding and normalization for numerical 
+ones. Our modeling approach involves training separate models on each dataset and comparing their performance.
+During initial exploration, we evaluated the feasibility of merging the datasets to build a unified feature 
+space. However, the datasets don’t share any common keys, and so we will proceed by treating the two datasets
+as independent supervised learning problems, each providing a different perspective on counterfeit activity. 
+We plan to use logistic regression (fast and handles relationships well), random forest (handles mixed 
+datatypes), gradient boosting (tubular and structured datasets, known in fraud detection systems),
+KNN (captures local patterns), and SVM. All methods are feasible for structured data and are well aligned
+with our goals. Checking multiple models will allow us to determine the best performer based on what we
+consider the most important objective: speed, generalization, interpretability, and sensitivity. Through 
+proper data selection we have validated that both datasets support training without requiring major cleaning
+or manipulation.
