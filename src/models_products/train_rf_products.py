@@ -13,18 +13,19 @@ from ..evaluation import evaluate_classifier
 
 
 def main():
-    # Load train/test splits + preprocessing pipeline
+    # Get train/test splits and preprocessing pipeline for products
     X_train, X_test, y_train, y_test, preprocessor = get_products_dataset()
 
-    # Define the Random Forest model
+    # Define the Random Forest classifier
     rf = RandomForestClassifier(
-        n_estimators=200,      # number of trees
-        max_depth=None,       # let trees expand fully (can tune later)
-        random_state=42,
-        n_jobs=-1,            # use all CPU cores
+        n_estimators=200,  # number of trees
+        max_depth=None,    # allow trees to grow fully
+        random_state=42,   # reproducible results
+        n_jobs=-1,         # parallelize across CPU cores
+        class_weight="balanced",
     )
 
-    # Full pipeline: preprocessing -> model
+    # Pipeline: preprocessing -> RF model
     clf = Pipeline(steps=[
         ("preprocess", preprocessor),
         ("model", rf),
@@ -33,7 +34,7 @@ def main():
     # Train the model
     clf.fit(X_train, y_train)
 
-    # Evaluate and save metrics/plots
+    # Evaluate on the test set
     evaluate_classifier(
         clf,
         X_test,

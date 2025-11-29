@@ -3,10 +3,11 @@ preprocessing_products.py
 
 Preprocessing pipeline for the products/sellers dataset.
 - Selects features + target (is_counterfeit)
-- Encodes categoricals
-- Scales numeric features if needed
+- Encodes categoricals with OneHotEncoder
+- Scales numeric features with StandardScaler
 - Returns train/test splits and the preprocessing pipeline
 """
+
 from typing import Tuple
 
 import pandas as pd
@@ -21,12 +22,20 @@ from .data_loading import load_products
 def get_products_features_and_target(df: pd.DataFrame):
     """
     Split products dataframe into features X and target y.
-    Uses all non-ID, non-target columns as features.
+
+    df : raw products DataFrame
+
+    Returns
+    -------
+    X : DataFrame of features
+    y : Series of target labels (0/1)
     """
-    target_col = "is_counterfeit"
+    target_col = "is_counterfeit"  # binary target column
 
-    id_cols = ["product_id", "seller_id"]
+    # ID columns that uniquely identify rows but should not be used as features
+    id_cols = ["product_id", "seller_id"]  # kept here just for clarity (not used below)
 
+    # Feature columns used for modeling (all non-ID, non-target columns)
     feature_cols = [
         "category",
         "brand",
@@ -54,14 +63,21 @@ def get_products_features_and_target(df: pd.DataFrame):
         "ip_location_mismatch",
     ]
 
+    # X = features, y = label (cast to int to ensure 0/1)
     X = df[feature_cols].copy()
     y = df[target_col].astype(int)
     return X, y
 
 
 def build_products_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
-    """Build ColumnTransformer for the products dataset."""
+    """
+    Build ColumnTransformer for the products dataset.
 
+    - numeric_cols -> StandardScaler
+    - categorical_cols -> OneHotEncoder
+    """
+
+    # Hand-picked numeric columns (will be standardized)
     numeric_cols = [
         "price",
         "seller_rating",
@@ -78,6 +94,7 @@ def build_products_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
         "bulk_orders",
     ]
 
+    # Hand-picked categorical/boolean columns (will be one-hot encoded)
     categorical_cols = [
         "category",
         "brand",
@@ -92,9 +109,11 @@ def build_products_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
         "ip_location_mismatch",
     ]
 
-    cat_transformer = OneHotEncoder(handle_unknown="ignore")
-    num_transformer = StandardScaler()
+    # Define transformers
+    cat_transformer = OneHotEncoder(handle_unknown="ignore")  # ignore unseen categories
+    num_transformer = StandardScaler()                        # mean=0, std=1
 
+    # ColumnTransformer applies different transformers to different column subsets
     preprocessor = ColumnTransformer(
         transformers=[
             ("num", num_transformer, numeric_cols),
@@ -109,19 +128,25 @@ def get_products_dataset(
     test_size: float = TEST_SIZE, random_state: int = RANDOM_STATE
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, ColumnTransformer]:
     """
-    Full helper:
-    - loads data
-    - splits into X/y
-    - train/test split
-    - builds preprocessor
+    Full helper for the products dataset:
+    - loads raw data
+    - builds X, y
+    - splits into train/test
+    - builds preprocessing pipeline
+
+    Returns
+    -------
+    X_train, X_test, y_train, y_test, preprocessor
     """
-    df = load_products()
+    df = load_products()  # load raw CSV via helper
     X, y = get_products_features_and_target(df)
 
+    # Stratified split keeps class balance similar in train and test
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state, stratify=y
     )
 
+    # Build preprocessor using training data columns
     preprocessor = build_products_preprocessor(X_train)
 
     return X_train, X_test, y_train, y_test, preprocessor
