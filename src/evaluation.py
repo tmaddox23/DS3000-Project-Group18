@@ -94,31 +94,6 @@ def evaluate_classifier(
     else:
         print("ROC-AUC  : N/A (no probability output)")
 
-    # ------------------------------------------------------------------
-    # Save metrics to CSV for easy reporting
-    # ------------------------------------------------------------------
-    import csv
-    metrics_path = RESULTS_DIR / "metrics.csv"
-
-    # Write header only if file does NOT exist yet
-    write_header = not metrics_path.exists()
-
-    with open(metrics_path, "a", newline="") as f:
-        writer = csv.writer(f)
-        if write_header:
-            writer.writerow([
-                "dataset", "model", "accuracy", "precision",
-                "recall", "f1", "roc_auc"
-            ])
-        writer.writerow([
-            dataset_name, model_name, acc, prec, rec, f1, roc
-        ])
-    # Optionally generate and save plots
-    if save_plots:
-        _plot_confusion_matrix(y_test, y_pred, model_name, dataset_name)
-        if y_proba is not None:
-            _plot_roc_curve(y_test, y_proba, model_name, dataset_name)
-
 
 def _plot_confusion_matrix(y_true, y_pred, model_name: str, dataset_name: str):
     """
@@ -136,14 +111,6 @@ def _plot_confusion_matrix(y_true, y_pred, model_name: str, dataset_name: str):
     for (i, j), val in np.ndenumerate(cm):
         ax.text(j, i, val, ha="center", va="center")
 
-
-    # Build output path like: results/confusion_matrices/transactions_rf_confusion.png
-    out_path = Path(CONFUSION_DIR) / f"{dataset_name}_{model_name}_confusion.png"
-    fig.tight_layout()
-    fig.savefig(out_path)
-    plt.close(fig)  # free memory
-
-
 def _plot_roc_curve(y_true, y_proba, model_name: str, dataset_name: str):
     """
     Draw and save a ROC curve as a PNG image.
@@ -152,9 +119,3 @@ def _plot_roc_curve(y_true, y_proba, model_name: str, dataset_name: str):
     # scikit-learn helper builds false positive rate, true positive rate, etc.
     RocCurveDisplay.from_predictions(y_true, y_proba, ax=ax)
     ax.set_title(f"ROC Curve: {model_name} ({dataset_name})")
-
-    # Build output path like: results/roc_curves/products_logreg_roc.png
-    out_path = Path(ROC_DIR) / f"{dataset_name}_{model_name}_roc.png"
-    fig.tight_layout()
-    fig.savefig(out_path)
-    plt.close(fig)  # free memory
