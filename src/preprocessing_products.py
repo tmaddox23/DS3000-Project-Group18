@@ -1,11 +1,12 @@
 """
 preprocessing_products.py
 
-Preprocessing pipeline for the products/sellers dataset.
-- Selects features + target (is_counterfeit)
-- Encodes categoricals with OneHotEncoder
-- Scales numeric features with StandardScaler
-- Returns train/test splits and the preprocessing pipeline
+Leakage-free preprocessing pipeline for products dataset.
+- Removes leaking columns
+- Converts booleans
+- Handles date field
+- Encodes categoricals
+- Scales numeric features
 """
 
 from typing import Tuple
@@ -18,135 +19,83 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from .config import TEST_SIZE, RANDOM_STATE
 from .data_loading import load_products
 
+NUMERIC_COLS = [
+    "price",
+    "views",
+    "purchases",
+    "wishlist_adds",
+    "certification_badges",
+    "warranty_months",
+    "listing_days_since",   # derived from date
+]
+
+BOOL_COLS = [
+    "contact_info_complete",
+    "return_policy_clear",
+    "bulk_orders",
+    "unusual_payment_patterns",
+    "ip_location_mismatch",
+]
+
+CATEGORICAL_COLS = [
+    "category",
+    "brand",
+    "seller_country",
+    "shipping_origin",
+]
 
 def get_products_features_and_target(df: pd.DataFrame):
-    """
-    Split products dataframe into features X and target y.
 
-    df : raw products DataFrame
+    # Convert listing_date → numeric
+    if "listing_date" in df.columns:
+        df["listing_date"] = pd.to_datetime(df["listing_date"], errors="coerce")
+        min_date = df["listing_date"].min()
+        df["listing_days_since"] = (df["listing_date"] - min_date).dt.days.fillna(0)
 
-    Returns
-    -------
-    X : DataFrame of features
-    y : Series of target labels (0/1)
-    """
-    target_col = "is_counterfeit"  # binary target column
+    # Ensure boolean columns are 0/1
+    for col in BOOL_COLS:
+        if col in df.columns:
+            df[col] = df[col].astype(int)
 
-    # ID columns that uniquely identify rows but should not be used as features
-    id_cols = ["product_id", "seller_id"]  # kept here just for clarity (not used below)
+    target_col = "is_counterfeit"
 
-    # Feature columns used for modeling (all non-ID, non-target columns)
-    feature_cols = [
-        "category",
-        "brand",
-        "price",
-        "seller_rating",
-        "seller_reviews",
-        "product_images",
-        "description_length",
-        "shipping_time_days",
-        "spelling_errors",
-        "domain_age_days",
-        "contact_info_complete",
-        "return_policy_clear",
-        "payment_methods_count",
-        "listing_date",
-        "seller_country",
-        "shipping_origin",
-        "views",
-        "purchases",
-        "wishlist_adds",
-        "certification_badges",
-        "warranty_months",
-        "bulk_orders",
-        "unusual_payment_patterns",
-        "ip_location_mismatch",
-    ]
+    # FINAL FEATURE SET = numeric + boolean + categorical
+    feature_cols = NUMERIC_COLS + BOOL_COLS + CATEGORICAL_COLS
 
-    # X = features, y = label (cast to int to ensure 0/1)
-    X = df[feature_cols].copy()
-    y = df[target_col].astype(int)
+    # Drop rows missing required cols
+    df_clean = df.dropna(subset=feature_cols + [target_col])
+
+    X = df_clean[feature_cols]
+    y = df_clean[target_col].astype(int)
+
     return X, y
 
-
 def build_products_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
-    """
-    Build ColumnTransformer for the products dataset.
 
-    - numeric_cols -> StandardScaler
-    - categorical_cols -> OneHotEncoder
-    """
-
-    # Hand-picked numeric columns (will be standardized)
-    numeric_cols = [
-        "price",
-        "seller_rating",
-        "seller_reviews",
-        "description_length",
-        "shipping_time_days",
-        "spelling_errors",
-        "domain_age_days",
-        "payment_methods_count",
-        "views",
-        "purchases",
-        "wishlist_adds",
-        "warranty_months",
-        "bulk_orders",
-    ]
-
-    # Hand-picked categorical/boolean columns (will be one-hot encoded)
-    categorical_cols = [
-        "category",
-        "brand",
-        "product_images",
-        "contact_info_complete",
-        "return_policy_clear",
-        "listing_date",
-        "seller_country",
-        "shipping_origin",
-        "certification_badges",
-        "unusual_payment_patterns",
-        "ip_location_mismatch",
-    ]
-
-    # Define transformers
-    cat_transformer = OneHotEncoder(handle_unknown="ignore")  # ignore unseen categories
-    num_transformer = StandardScaler()                        # mean=0, std=1
-
-    # ColumnTransformer applies different transformers to different column subsets
     preprocessor = ColumnTransformer(
         transformers=[
-            ("num", num_transformer, numeric_cols),
-            ("cat", cat_transformer, categorical_cols),
+            ("num", StandardScaler(), NUMERIC_COLS + BOOL_COLS),   # scale numeric + boolean
+            ("cat", OneHotEncoder(handle_unknown="ignore"), CATEGORICAL_COLS),
         ]
     )
 
     return preprocessor
 
-
 def get_products_dataset(
     test_size: float = TEST_SIZE, random_state: int = RANDOM_STATE
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, ColumnTransformer]:
-    """
-    Full helper for the products dataset:
-    - loads raw data
-    - builds X, y
-    - splits into train/test
-    - builds preprocessing pipeline
 
-    Returns
-    -------
-    X_train, X_test, y_train, y_test, preprocessor
-    """
-    df = load_products()  # load raw CSV via helper
+    df = load_products()
     X, y = get_products_features_and_target(df)
 
-    # Stratified split keeps class balance similar in train and test
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state, stratify=y
+        X,
+        y,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=y
     )
 
-    # Build preprocessor using training data columns
     preprocessor = build_products_preprocessor(X_train)
 
     return X_train, X_test, y_train, y_test, preprocessor
