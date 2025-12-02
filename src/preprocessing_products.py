@@ -26,7 +26,7 @@ NUMERIC_COLS = [
     "wishlist_adds",
     "certification_badges",
     "warranty_months",
-    "listing_days_since",   # derived from date
+    "listing_days_since",
 ]
 
 BOOL_COLS = [
@@ -59,10 +59,8 @@ def get_products_features_and_target(df: pd.DataFrame):
 
     target_col = "is_counterfeit"
 
-    # FINAL FEATURE SET = numeric + boolean + categorical
     feature_cols = NUMERIC_COLS + BOOL_COLS + CATEGORICAL_COLS
 
-    # Drop rows missing required cols
     df_clean = df.dropna(subset=feature_cols + [target_col])
 
     X = df_clean[feature_cols]
