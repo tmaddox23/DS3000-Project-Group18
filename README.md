@@ -20,69 +20,66 @@ Install required Python packages:
 ```bash
 pip install -r requirements.txt
 ```
+---
 
-If you use conda:
-```bash
-conda create -n ds3000 python=3.11
-conda activate ds3000
-pip install -r requirements.txt
-```
+## How to run
 
-## Preprocessing overview
-preprocessing_overview:
-  transactions:
-    description: "Preprocessing for the transaction-level dataset (_counterfeit_transactions.csv)."
-    steps:
-      - "Load raw data from data/raw/"
-      - "Drop ID columns: transaction_id, customer_id"
-      - "Identify target column: involves_counterfeit"
-      - "Select relevant numeric and categorical features"
-      - "Apply StandardScaler to numeric features"
-      - "Apply OneHotEncoder to categorical and boolean features"
-      - "Split into train/test sets (80/20 stratified)"
-      - "Return X_train, X_test, y_train, y_test, preprocessor"
+Navigate to the notebooks folder and run the .ipynbs
 
-  products:
-    description: "Preprocessing for the product/seller-level dataset (counterfeit_products.csv)."
-    steps:
-      - "Load raw data from data/raw/"
-      - "Drop ID columns: product_id, seller_id"
-      - "Identify target column: is_counterfeit"
-      - "Select product-level and seller-level numeric features"
-      - "Select appropriate categorical and boolean features"
-      - "Apply StandardScaler to numeric features"
-      - "Apply OneHotEncoder to categorical features"
-      - "Split into train/test sets (80/20 stratified)"
-      - "Return X_train, X_test, y_train, y_test, preprocessor"
+---
 
-running_models:
-  transaction_models:
-    logistic_regression: "python src/models_transactions/train_logreg_transactions.py"
-    random_forest: "python src/models_transactions/train_rf_transactions.py"
-    gradient_boosting: "python src/models_transactions/train_gb_transactions.py"
-    svm: "python src/models_transactions/train_svm_transactions.py"
-    knn: "python src/models_transactions/train_knn_transactions.py"
+## Preprocessing Overview
 
-  product_models:
-    logistic_regression: "python src/models_products/train_logreg_products.py"
-    random_forest: "python src/models_products/train_rf_products.py"
-    gradient_boosting: "python src/models_products/train_gb_products.py"
-    svm: "python src/models_products/train_svm_products.py"
-    knn: "python src/models_products/train_knn_products.py"
+This document summarizes the preprocessing logic for both datasets used in the counterfeit detection pipeline:  
+- **Transaction-level dataset** (`_counterfeit_transactions.csv`)  
+- **Product/Seller-level dataset** (`counterfeit_products.csv`)
 
-outputs:
-  saved_to: "results/"
-  files:
-    - "metrics_transactions.csv"
-    - "metrics_products.csv"
-  directories:
-    - "results/confusion_matrices/"
-    - "results/roc_curves/"
-  printed_metrics:
-    - "accuracy"
-    - "precision"
-    - "recall"
-    - "f1_score"
-    - "roc_auc (when available)"
+Each preprocessing module loads raw data, selects safe/meaningful features, encodes/standardizes them, and returns train/test splits along with an sklearn `ColumnTransformer` preprocessor.
 
-#
+---
+
+### 🧾 Transactions Preprocessing
+
+**File:** `preprocessing_transactions.py`  
+**Description:** Preprocessing for the transaction-level dataset (`_counterfeit_transactions.csv`).
+
+#### Steps
+
+1. **Load raw data** from `data/raw/`.
+2. **Drop ID columns:**  
+   `transaction_id`, `customer_id`
+3. **Identify target column:**  
+   `involves_counterfeit`
+4. **Select relevant features:**  
+   - Numeric features (e.g., `unit_price`, `customer_age`, `shipping_cost`, etc.)  
+   - Categorical + boolean features (e.g., `payment_method`, `shipping_speed`, `velocity_flag`, etc.)
+5. **Apply `StandardScaler`** to numeric features.
+6. **Apply `OneHotEncoder`** to categorical & boolean features.
+7. **Split into train/test sets** (80/20), stratified by `involves_counterfeit`.
+8. **Return:**  
+   `X_train`, `X_test`, `y_train`, `y_test`, `preprocessor`.
+
+---
+
+### 📦 Products Preprocessing
+
+**File:** `preprocessing_products.py`  
+**Description:** Preprocessing for the product/seller-level dataset (`counterfeit_products.csv`).
+
+#### Steps
+
+1. **Load raw data** from `data/raw/`.
+2. **Drop ID columns:**  
+   `product_id`, `seller_id`
+3. **Identify target column:**  
+   `is_counterfeit`
+4. **Select numeric features:**  
+   Product- and seller-level numerical information (e.g., price, views, warranty_months).
+5. **Select categorical & boolean features:**  
+   Category, brand, country fields, and fraud-related boolean flags.
+6. **Convert date field** (`listing_date`) → derived numeric: `listing_days_since`.
+7. **Apply `StandardScaler`** to numeric + boolean features.
+8. **Apply `OneHotEncoder`** to categorical features.
+9. **Split into train/test sets** (80/20), stratified by `is_counterfeit`.
+10. **Return:**  
+    `X_train`, `X_test`, `y_train`, `y_test`, `preprocessor`.
