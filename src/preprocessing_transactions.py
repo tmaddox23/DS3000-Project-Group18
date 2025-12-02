@@ -1,6 +1,4 @@
 """
-preprocessing_transactions.py
-
 Preprocessing pipeline for the transactions dataset.
 - Selects features + target (involves_counterfeit)
 - Encodes categoricals/booleans
@@ -33,7 +31,7 @@ def get_transactions_features_and_target(df: pd.DataFrame):
     target_col = "involves_counterfeit"  # binary target
 
     # ID columns (not used as features)
-    id_cols = ["transaction_id", "customer_id"]  # kept for clarity
+    id_cols = ["transaction_id", "customer_id"]
 
     # Feature columns (all non-ID, non-target)
     feature_cols = [
@@ -57,7 +55,7 @@ def get_transactions_features_and_target(df: pd.DataFrame):
     ]
 
     X = df[feature_cols].copy()
-    y = df[target_col].astype(int)  # make sure it's numeric 0/1
+    y = df[target_col].astype(int)
     return X, y
 
 
