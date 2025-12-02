@@ -1,6 +1,4 @@
 """
-preprocessing_products.py
-
 Leakage-free preprocessing pipeline for products dataset.
 - Removes leaking columns
 - Converts booleans

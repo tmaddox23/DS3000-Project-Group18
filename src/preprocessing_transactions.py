@@ -1,6 +1,4 @@
 """
-preprocessing_transactions.py
-
 Preprocessing pipeline for the transactions dataset.
 - Selects features + target (involves_counterfeit)
 - Encodes categoricals/booleans
