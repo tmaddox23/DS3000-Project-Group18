@@ -30,10 +30,6 @@ Navigate to the notebooks folder and run the .ipynbs
 
 ## Preprocessing Overview
 
-This document summarizes the preprocessing logic for both datasets used in the counterfeit detection pipeline:  
-- **Transaction-level dataset** (`_counterfeit_transactions.csv`)  
-- **Product/Seller-level dataset** (`counterfeit_products.csv`)
-
 Each preprocessing module loads raw data, selects safe/meaningful features, encodes/standardizes them, and returns train/test splits along with an sklearn `ColumnTransformer` preprocessor.
 
 ---
