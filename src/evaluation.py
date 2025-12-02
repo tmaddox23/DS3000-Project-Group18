@@ -232,3 +232,11 @@ def evaluate_classifier(
         print(f"ROC-AUC  : {roc:.4f}")
     else:
         print("ROC-AUC  : N/A (no probability output)")
+
+    return {
+        "accuracy": acc,
+        "precision": prec,
+        "recall": rec,
+        "f1": f1,
+        "roc_auc": roc,
+    }
