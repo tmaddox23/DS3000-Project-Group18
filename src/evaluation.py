@@ -7,6 +7,7 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 from sklearn.metrics import (
     accuracy_score,
@@ -240,3 +241,74 @@ def evaluate_classifier(
         "f1": f1,
         "roc_auc": roc,
     }
+
+def compare_model_results(results_dict, dataset_name: str, trained_models: Optional[dict] = None, X_test: Optional[pd.DataFrame] = None, y_test: Optional[pd.Series] = None):
+    results_df = pd.DataFrame.from_dict(results_dict, orient="index")
+    results_df.index.name = "model"
+    results_df
+    # F1-score comparison
+    plt.figure(figsize=(8, 4))
+    sns.barplot(
+        data=results_df.reset_index(),
+        x="model",
+        y="f1",
+    )
+    plt.title(f"{dataset_name} - F1-score by Model")
+    plt.xlabel("Model")
+    plt.ylabel("F1-score")
+    plt.xticks(rotation=20)
+    plt.tight_layout()
+    plt.show()
+
+    plt.figure(figsize=(8, 6))
+
+    for model_name, model in trained_models.items():
+        # Get score vector
+        if hasattr(model, "predict_proba"):
+            y_scores = model.predict_proba(X_test)[:, 1]
+        elif hasattr(model, "decision_function"):
+            y_scores = model.decision_function(X_test)
+        else:
+            continue  # skip models with no scoring output
+
+        RocCurveDisplay.from_predictions(
+            y_test,
+            y_scores,
+            name=model_name,
+            ax=plt.gca()
+        )
+
+    plt.title("Combined ROC Curves - Products Dataset")
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.legend()
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    plt.show()
+
+
+    plt.figure(figsize=(8, 6))
+
+    for model_name, model in trained_models.items():
+        # Get scores
+        if hasattr(model, "predict_proba"):
+            y_scores = model.predict_proba(X_test)[:, 1]
+        elif hasattr(model, "decision_function"):
+            y_scores = model.decision_function(X_test)
+        else:
+            continue
+
+        PrecisionRecallDisplay.from_predictions(
+            y_test,
+            y_scores,
+            name=model_name,
+            ax=plt.gca()
+        )
+
+    plt.title(f"Combined Precision-Recall Curves - {dataset_name} Dataset")
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.legend()
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    plt.show()
